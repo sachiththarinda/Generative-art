@@ -1,11 +1,30 @@
+
+from curses import start_color
 import random
+from tokenize import endpats   
 from PIL import Image, ImageDraw
+
+def random_color():
+    return (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255) )
+
+def interpolate(start_color, end_color, factor:float):
+    recip = 1 -factor
+    return(
+        int(start_color[0] * recip) + int(end_color[0] * factor),
+        int(start_color[1] * recip) + int(end_color[1] * factor),
+        int(start_color[2] * recip) + int(end_color[2] * factor),
+    )
+
 
 def genertive_art():
     print("generative art")
     image_size_px =128
+    padding_px = 12
     image_bg_color=(255, 255, 255)
+    start_color=random_color()
+    end_color=random_color()
     image =Image.new("RGB", size=(image_size_px, image_size_px ), color=(image_bg_color))
+ 
     
     #draw some lines
     draw = ImageDraw.Draw(image)
@@ -14,25 +33,34 @@ def genertive_art():
     #generate the points
     for _ in range(10):
         random_point=  (
-            random.randint(0, image_size_px), 
-            random.randint(0, image_size_px) 
+            random.randint(padding_px, image_size_px - padding_px), 
+            random.randint(padding_px, image_size_px - padding_px) 
             )
         points.append(random_point)
-       
     
+    #Draw   bounding box
+    min_x = min([p[0] for p in points])
+    max_x = max([p[0] for p in points])
+    min_y = min([p[1] for p in points])
+    max_y = max([p[1] for p in points])  
+    draw.rectangle((min_x, min_y, max_x, max_y), outline=(255, 0, 0))
     #draw the points
     
-   
+    thickness= 0
+    n_points = len(points) - 1
     for i, point in enumerate(points):
         p1 =point
         
-        if i == len(points)-1:
+        if i == n_points:
             p2=points[0]
         else:
             p2=points[i + 1]
+            
         line_xy= (p1, p2)
-        line_color=(0, 0, 0)
-        draw.line(line_xy, fill=line_color)
+        color_factor = i/ n_points
+        line_color = interpolate(start_color ,end_color, color_factor)
+        thickness += 1
+        draw.line(line_xy, fill=line_color, width=thickness)
     
     image.save("test_image.png")
     
